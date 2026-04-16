@@ -72,6 +72,12 @@ pub fn scan_local_skills_with_adapters(
                     continue;
                 }
 
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if name.starts_with('.') {
+                        continue;
+                    }
+                }
+
                 if is_symlink_to_central(&path) {
                     continue;
                 }
