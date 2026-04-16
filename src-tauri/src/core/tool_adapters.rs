@@ -113,10 +113,7 @@ pub fn default_tool_adapters() -> Vec<ToolAdapter> {
             display_name: "Claude Code".into(),
             relative_skills_dir: ".claude/skills".into(),
             relative_detect_dir: ".claude".into(),
-            additional_scan_dirs: vec![
-                ".claude/plugins/cache".into(),
-                ".claude/plugins/marketplaces".into(),
-            ],
+            additional_scan_dirs: vec![],
             override_skills_dir: None,
             is_custom: false,
         },
