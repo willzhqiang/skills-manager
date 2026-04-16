@@ -7,6 +7,7 @@ pub mod git_backup;
 pub mod git_fetcher;
 pub mod install_cancel;
 pub mod installer;
+pub mod manifest;
 pub mod migrations;
 pub mod project_scanner;
 pub mod scanner;

@@ -1,4 +1,6 @@
-use crate::core::{central_repo, error::AppError, git_backup, git_fetcher, skill_metadata};
+use crate::core::{
+    central_repo, error::AppError, git_backup, git_fetcher, manifest, skill_metadata,
+};
 use std::sync::Arc;
 use tauri::State;
 use walkdir::WalkDir;
@@ -42,9 +44,10 @@ pub async fn git_backup_commit(
     store: State<'_, Arc<SkillStore>>,
     message: String,
 ) -> Result<(), AppError> {
-    let _ = store;
+    let store = store.inner().clone();
     let skills_dir = central_repo::skills_dir();
     tokio::task::spawn_blocking(move || {
+        manifest::export_manifest(&store, &skills_dir).map_err(AppError::io)?;
         git_backup::commit_all(&skills_dir, &message).map_err(AppError::git)
     })
     .await?
@@ -66,7 +69,7 @@ pub async fn git_backup_pull(store: State<'_, Arc<SkillStore>>) -> Result<(), Ap
     let skills_dir = central_repo::skills_dir();
     tokio::task::spawn_blocking(move || {
         git_backup::pull(&skills_dir).map_err(AppError::classify_git_error)?;
-        reconcile_skills_index(&store).map_err(AppError::db)
+        import_manifest_then_reconcile(&store, &skills_dir)
     })
     .await?
 }
@@ -81,7 +84,7 @@ pub async fn git_backup_clone(
     let skills_dir = central_repo::skills_dir();
     tokio::task::spawn_blocking(move || {
         git_backup::clone_into(&skills_dir, &url).map_err(AppError::classify_git_error)?;
-        reconcile_skills_index(&store).map_err(AppError::db)
+        import_manifest_then_reconcile(&store, &skills_dir)
     })
     .await?
 }
@@ -121,8 +124,7 @@ pub async fn git_backup_restore_version(
     let skills_dir = central_repo::skills_dir();
     tokio::task::spawn_blocking(move || {
         git_backup::restore_snapshot_version(&skills_dir, &tag).map_err(AppError::git)?;
-        reconcile_skills_index(&store).map_err(AppError::db)?;
-        Ok(())
+        import_manifest_then_reconcile(&store, &skills_dir)
     })
     .await?
 }
@@ -194,4 +196,16 @@ fn reconcile_skills_index(store: &SkillStore) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/// Try to import from manifest first (preserves metadata like tags, scenarios,
+/// source info), then fall back to reconcile for any skills not covered.
+fn import_manifest_then_reconcile(
+    store: &SkillStore,
+    skills_dir: &std::path::Path,
+) -> Result<(), AppError> {
+    if let Ok(Some(_)) = manifest::read_manifest(skills_dir) {
+        manifest::import_manifest(store, skills_dir).map_err(AppError::io)?;
+    }
+    reconcile_skills_index(store).map_err(AppError::db)
 }
