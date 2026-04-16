@@ -12,7 +12,7 @@ use crate::core::{
     installer,
     skill_metadata::{self, is_valid_skill_dir},
     skill_store::{SkillRecord, SkillStore, SkillTargetRecord},
-    sync_engine,
+    sync_engine, tool_adapters,
 };
 
 #[derive(Debug, Serialize)]
@@ -1184,7 +1184,19 @@ fn store_installed_skill(
             .map_err(AppError::db)?;
     }
 
+    auto_sync_to_enabled_tools(store, &id);
+
     Ok(id)
+}
+
+/// After installing a skill, automatically sync (symlink/copy) it to all
+/// enabled and installed agent directories so the user doesn't have to
+/// manually toggle each tool.
+fn auto_sync_to_enabled_tools(store: &SkillStore, skill_id: &str) {
+    let adapters = tool_adapters::enabled_installed_adapters(store);
+    for adapter in &adapters {
+        let _ = super::sync::sync_skill_to_tool_internal(store, skill_id, &adapter.key);
+    }
 }
 
 fn check_skill_update_internal(

@@ -27,7 +27,7 @@ fn disabled_tools(store: &SkillStore) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn sync_skill_to_tool_internal(
+pub fn sync_skill_to_tool_internal(
     store: &SkillStore,
     skill_id: &str,
     tool: &str,
