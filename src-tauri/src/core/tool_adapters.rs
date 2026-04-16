@@ -495,6 +495,33 @@ pub fn default_tool_adapters() -> Vec<ToolAdapter> {
             override_skills_dir: None,
             is_custom: false,
         },
+        ToolAdapter {
+            key: "claude_internal".into(),
+            display_name: "Claude Code (Internal)".into(),
+            relative_skills_dir: ".claude-internal/skills".into(),
+            relative_detect_dir: ".claude-internal".into(),
+            additional_scan_dirs: vec![],
+            override_skills_dir: None,
+            is_custom: false,
+        },
+        ToolAdapter {
+            key: "forge".into(),
+            display_name: "ForgeCode".into(),
+            relative_skills_dir: ".forge/skills".into(),
+            relative_detect_dir: ".forge".into(),
+            additional_scan_dirs: vec![],
+            override_skills_dir: None,
+            is_custom: false,
+        },
+        ToolAdapter {
+            key: "hermes".into(),
+            display_name: "Hermes Agent".into(),
+            relative_skills_dir: ".hermes/skills".into(),
+            relative_detect_dir: ".hermes".into(),
+            additional_scan_dirs: vec![],
+            override_skills_dir: None,
+            is_custom: false,
+        },
     ]
 }
 
