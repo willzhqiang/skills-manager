@@ -35,6 +35,12 @@ pub struct ManifestSkill {
     pub source_subpath: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_branch: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_revision: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remote_revision: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<String>,
     pub enabled: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
@@ -113,6 +119,9 @@ pub fn export_manifest(store: &SkillStore, skills_dir: &Path) -> Result<()> {
                 source_ref_resolved: skill.source_ref_resolved.clone(),
                 source_subpath: skill.source_subpath.clone(),
                 source_branch: skill.source_branch.clone(),
+                source_revision: skill.source_revision.clone(),
+                remote_revision: skill.remote_revision.clone(),
+                content_hash: skill.content_hash.clone(),
                 enabled: skill.enabled,
                 tags: skill_tags,
                 scenarios: skill_scenarios,
@@ -270,15 +279,22 @@ pub fn import_manifest(store: &SkillStore, skills_dir: &Path) -> Result<ImportRe
             source_ref_resolved: ms.source_ref_resolved.clone(),
             source_subpath: ms.source_subpath.clone(),
             source_branch: ms.source_branch.clone(),
-            source_revision: None,
-            remote_revision: None,
+            source_revision: ms.source_revision.clone(),
+            remote_revision: ms.remote_revision.clone(),
             central_path,
-            content_hash,
+            content_hash: ms.content_hash.clone().or(content_hash),
             enabled: ms.enabled,
             created_at: now,
             updated_at: now,
             status: "ok".to_string(),
             update_status: match ms.source_type.as_str() {
+                "git" | "skillssh" if ms.source_revision.is_some() => {
+                    match (&ms.source_revision, &ms.remote_revision) {
+                        (Some(src), Some(rem)) if src == rem => "up_to_date".to_string(),
+                        (Some(_), Some(_)) => "update_available".to_string(),
+                        _ => "up_to_date".to_string(),
+                    }
+                }
                 "git" | "skillssh" => "unknown".to_string(),
                 _ => "local_only".to_string(),
             },
