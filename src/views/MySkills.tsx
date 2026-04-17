@@ -1207,14 +1207,27 @@ export function MySkills() {
                     </p>
                     {badge && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[13px] font-medium",
-                            badge.className
-                          )}
-                        >
-                          {badge.label}
-                        </span>
+                        {skill.update_status === "update_available" ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
+                            disabled={updatingSkillId === skill.id}
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[13px] font-medium transition-colors hover:opacity-80 disabled:opacity-50",
+                              badge.className
+                            )}
+                          >
+                            {updatingSkillId === skill.id ? t("mySkills.updateStatus.updating") : badge.label}
+                          </button>
+                        ) : (
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[13px] font-medium",
+                              badge.className
+                            )}
+                          >
+                            {badge.label}
+                          </span>
+                        )}
                         {isMissingLocalSource && (
                           <>
                             <button
@@ -1382,14 +1395,27 @@ export function MySkills() {
 
                 <div className="flex shrink-0 items-center gap-2.5">
                   {badge && (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[12px] font-medium",
-                        badge.className
-                      )}
-                    >
-                      {badge.label}
-                    </span>
+                    skill.update_status === "update_available" ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRefreshSkill(skill); }}
+                        disabled={updatingSkillId === skill.id}
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[12px] font-medium transition-colors hover:opacity-80 disabled:opacity-50",
+                          badge.className
+                        )}
+                      >
+                        {updatingSkillId === skill.id ? t("mySkills.updateStatus.updating") : badge.label}
+                      </button>
+                    ) : (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-[12px] font-medium",
+                          badge.className
+                        )}
+                      >
+                        {badge.label}
+                      </span>
+                    )
                   )}
                   <span className="inline-flex items-center gap-1 text-[13px] text-muted">
                     {sourceIcon(skill.source_type)}
@@ -1476,6 +1502,8 @@ export function MySkills() {
         toolToggles={toolToggles}
         togglingTool={togglingToolKey}
         onToggleTool={handleToggleSkillTool}
+        onUpdate={handleRefreshSkill}
+        updating={selectedSkill ? updatingSkillId === selectedSkill.id : false}
       />
 
       <ConfirmDialog

@@ -31,6 +31,8 @@ interface Props {
   toolToggles?: SkillToolToggle[] | null;
   togglingTool?: string | null;
   onToggleTool?: (tool: string, enabled: boolean) => void;
+  onUpdate?: (skill: ManagedSkill) => void;
+  updating?: boolean;
 }
 
 export function SkillDetailPanel({
@@ -39,6 +41,8 @@ export function SkillDetailPanel({
   toolToggles,
   togglingTool,
   onToggleTool,
+  onUpdate,
+  updating,
 }: Props) {
   const { t } = useTranslation();
   const [doc, setDoc] = useState<SkillDocument | null>(null);
@@ -163,9 +167,20 @@ export function SkillDetailPanel({
       <div className="relative h-full w-full overflow-y-auto border-l border-border-subtle bg-bg-secondary shadow-2xl animate-in slide-in-from-right duration-200">
         <div className="border-b border-border-subtle px-6 pt-6 pb-5 animate-in fade-in duration-300">
           <div className="mb-3 flex items-start justify-between gap-4">
-            <h2 className="min-w-0 text-[30px] font-semibold leading-tight tracking-tight text-primary animate-in slide-in-from-left-2 duration-300">
-              <span className="block truncate">{skill.name}</span>
-            </h2>
+            <div className="flex min-w-0 items-center gap-3">
+              <h2 className="min-w-0 text-[30px] font-semibold leading-tight tracking-tight text-primary animate-in slide-in-from-left-2 duration-300">
+                <span className="block truncate">{skill.name}</span>
+              </h2>
+              {skill.update_status === "update_available" && onUpdate && (
+                <button
+                  onClick={() => onUpdate(skill)}
+                  disabled={updating}
+                  className="shrink-0 rounded-full bg-amber-500/12 px-3 py-1 text-[13px] font-medium text-amber-600 transition-colors hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                >
+                  {updating ? t("mySkills.updateStatus.updating") : t("mySkills.updateActions.update")}
+                </button>
+              )}
+            </div>
             <button
               onClick={onClose}
               className="text-muted hover:text-secondary p-1.5 rounded-[4px] hover:bg-surface-hover transition-colors outline-none shrink-0"
