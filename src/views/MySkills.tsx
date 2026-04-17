@@ -21,6 +21,7 @@ import {
   SquareCheck,
   Square,
   GripVertical,
+  DownloadCloud,
 } from "lucide-react";
 import { open as dialogOpen } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
@@ -867,18 +868,33 @@ export function MySkills() {
 
         <div className="app-segmented">
           {!gitStatus?.is_repo ? (
-            <button
-              onClick={handleGitStartBackup}
-              disabled={!!gitLoading}
-              className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
-            >
-              {gitLoading === "start" ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <GitBranch className="h-3.5 w-3.5" />
-              )}
-              {gitLoading === "start" ? t("settings.gitInitializing") : t("settings.gitStartBackup")}
-            </button>
+            gitRemoteConfig ? (
+              <button
+                onClick={handleGitStartBackup}
+                disabled={!!gitLoading}
+                className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+              >
+                {gitLoading === "start" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <DownloadCloud className="h-3.5 w-3.5" />
+                )}
+                {gitLoading === "start" ? t("settings.gitCloning") : t("settings.gitCloneFrom")}
+              </button>
+            ) : (
+              <button
+                onClick={handleGitStartBackup}
+                disabled={!!gitLoading}
+                className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+              >
+                {gitLoading === "start" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <GitBranch className="h-3.5 w-3.5" />
+                )}
+                {gitLoading === "start" ? t("settings.gitInitializing") : t("settings.gitInitRepo")}
+              </button>
+            )
           ) : (
             (() => {
               const gitSyncButton = getGitSyncButtonState();
