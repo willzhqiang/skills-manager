@@ -344,6 +344,7 @@ pub fn run() {
     );
     commands::tools::migrate_legacy_tool_keys(&store).expect("Failed to migrate legacy tool keys");
     auto_import_manifest_if_needed(&store);
+    backfill_empty_descriptions(&store);
     let store_for_setup = store.clone();
     initialize_startup_scenario(&store).expect("Failed to initialize startup scenario");
 
@@ -532,6 +533,24 @@ fn initialize_startup_scenario(store: &Arc<core::skill_store::SkillStore>) -> Re
 
     commands::scenarios::sync_scenario_skills(store, &desired_active).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+fn backfill_empty_descriptions(store: &std::sync::Arc<core::skill_store::SkillStore>) {
+    let skills = match store.get_all_skills() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+    for skill in &skills {
+        if skill.description.as_deref().map_or(true, |d| d.trim().is_empty()) {
+            let central = std::path::Path::new(&skill.central_path);
+            let meta = core::skill_metadata::parse_skill_md(central);
+            if let Some(desc) = meta.description {
+                if !desc.trim().is_empty() {
+                    let _ = store.update_skill_description(&skill.id, &desc);
+                }
+            }
+        }
+    }
 }
 
 fn auto_import_manifest_if_needed(store: &std::sync::Arc<core::skill_store::SkillStore>) {

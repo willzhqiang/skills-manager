@@ -186,6 +186,14 @@ mod tests {
     }
 
     #[test]
+    fn parse_frontmatter_folded_block_scalar() {
+        let content = "---\nname: uff\ndescription: >-\n  Line one\n  Line two\n---\n# Content";
+        let meta = parse_frontmatter(content);
+        assert_eq!(meta.name.as_deref(), Some("uff"));
+        assert_eq!(meta.description.as_deref(), Some("Line one Line two"));
+    }
+
+    #[test]
     fn parse_frontmatter_name_only() {
         let content = "---\nname: test-skill\n---\n";
         let meta = parse_frontmatter(content);

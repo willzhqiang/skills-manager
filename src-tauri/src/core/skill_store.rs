@@ -229,6 +229,15 @@ impl SkillStore {
         Ok(())
     }
 
+    pub fn update_skill_description(&self, id: &str, description: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE skills SET description = ?1 WHERE id = ?2",
+            params![description, id],
+        )?;
+        Ok(())
+    }
+
     pub fn update_skill_check_state(
         &self,
         id: &str,

@@ -186,7 +186,9 @@ fn project_to_dto(
     configs: &[project_scanner::AgentSkillConfig],
 ) -> ProjectDto {
     let skills = read_workspace_skills(rec, configs);
-    let skill_count = skills.len();
+    let unique_names: std::collections::HashSet<&str> =
+        skills.iter().map(|s| s.dir_name.as_str()).collect();
+    let skill_count = unique_names.len();
 
     let mut health = SyncHealthDto::default();
     for skill in &skills {
@@ -862,7 +864,7 @@ pub async fn export_skill_to_project(
                 .ok_or_else(|| AppError::not_found(format!("Unknown agent: {}", agent_key)))?;
             let target_dir = skills_root.join(&dir_name);
             std::fs::create_dir_all(&skills_root)?;
-            sync_engine::sync_skill(&source, &target_dir, sync_engine::SyncMode::Copy)
+            sync_engine::sync_skill(&source, &target_dir, sync_engine::SyncMode::Symlink)
                 .map_err(AppError::io)?;
         }
 

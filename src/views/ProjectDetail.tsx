@@ -26,7 +26,7 @@ import { useApp } from "../context/AppContext";
 import { useMultiSelect } from "../hooks/useMultiSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { MultiSelectToolbar } from "../components/MultiSelectToolbar";
-import { SkillMarkdown } from "../components/SkillMarkdown";
+import { SkillDetailPanel } from "../components/SkillDetailPanel";
 import { cn } from "../utils";
 import * as api from "../lib/tauri";
 import type { ProjectSkill, ManagedSkill, ProjectAgentTarget } from "../lib/tauri";
@@ -65,8 +65,11 @@ function getDefaultExportAgents(targets: ProjectAgentTarget[], savedValue?: stri
     }
   }
 
-  const prioritized = PROJECT_EXPORT_AGENT_PRIORITY.filter((key) => availableKeys.has(key));
-  const fallback = targets.map((target) => target.key);
+  const activeKeys = new Set(
+    targets.filter((t) => t.installed && t.enabled).map((t) => t.key)
+  );
+  const prioritized = PROJECT_EXPORT_AGENT_PRIORITY.filter((key) => activeKeys.has(key));
+  const fallback = targets.filter((t) => t.installed && t.enabled).map((t) => t.key);
   return Array.from(new Set((prioritized.length > 0 ? prioritized : fallback).slice(0, 3)));
 }
 
@@ -135,8 +138,6 @@ export function ProjectDetail() {
   const [filterMode, setFilterMode] = useState<"all" | "enabled" | "disabled">("all");
   const [search, setSearch] = useState("");
   const [detailSkill, setDetailSkill] = useState<ProjectSkillGroup | null>(null);
-  const [docContent, setDocContent] = useState<string | null>(null);
-  const [docLoading, setDocLoading] = useState(false);
   const [updatingCenterSkill, setUpdatingCenterSkill] = useState<string | null>(null);
   const [updatingProjectSkill, setUpdatingProjectSkill] = useState<string | null>(null);
   const [togglingSkill, setTogglingSkill] = useState<string | null>(null);
@@ -292,23 +293,17 @@ export function ProjectDetail() {
     [selectedExportAgents]
   );
 
+  const detailManagedSkill = useMemo(() => {
+    if (!detailSkill) return null;
+    const centerId = detailSkill.primaryVariant.center_skill_id;
+    if (centerId) {
+      return managedSkills.find((s) => s.id === centerId) ?? null;
+    }
+    return managedSkills.find((s) => s.name === detailSkill.name) ?? null;
+  }, [detailSkill, managedSkills]);
+
   const handleOpenDetail = async (skill: ProjectSkillGroup) => {
     setDetailSkill(skill);
-    setDocContent(null);
-    setDocLoading(true);
-    if (!project || !id) return;
-    try {
-      const doc = await api.getProjectSkillDocument(
-        id,
-        skill.primaryVariant.relative_path,
-        skill.primaryVariant.agent
-      );
-      setDocContent(doc.content);
-    } catch {
-      setDocContent(null);
-    } finally {
-      setDocLoading(false);
-    }
   };
 
   const handleUpdateCenter = async (skill: ProjectSkillGroup) => {
@@ -912,12 +907,10 @@ export function ProjectDetail() {
         </div>
       )}
 
-      {/* Skill Document Detail Panel */}
+      {/* Skill Document Detail Panel — reuse central SkillDetailPanel */}
       {detailSkill && project && (
-        <ProjectSkillDetailPanel
-          skill={detailSkill}
-          docContent={docContent}
-          docLoading={docLoading}
+        <SkillDetailPanel
+          skill={detailManagedSkill}
           onClose={() => setDetailSkill(null)}
         />
       )}
@@ -956,75 +949,6 @@ export function ProjectDetail() {
         />
       )}
     </div>
-  );
-}
-
-function ProjectSkillDetailPanel({
-  skill,
-  docContent,
-  docLoading,
-  onClose,
-}: {
-  skill: ProjectSkillGroup;
-  docContent: string | null;
-  docLoading: boolean;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-
-  return createPortal(
-    <div className="fixed inset-y-0 right-0 left-[220px] z-50 flex">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative flex h-full min-h-0 w-full flex-col border-l border-border-subtle bg-bg-secondary shadow-2xl animate-in slide-in-from-right duration-200">
-        <div className="border-b border-border-subtle px-6 pt-5 pb-4">
-          <div className="flex items-start justify-between mb-3">
-            <h2 className="text-lg font-semibold text-primary truncate mr-3">{skill.name}</h2>
-            <button
-              onClick={onClose}
-              className="text-muted hover:text-secondary p-1.5 rounded-[4px] hover:bg-surface-hover transition-colors outline-none shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          {skill.description && (
-            <p className="text-[13.5px] leading-relaxed text-secondary line-clamp-3">{skill.description}</p>
-          )}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[12.5px] text-muted">
-            {skill.variants.map((variant) => (
-              <span
-                key={variant.agent}
-                className="rounded-full bg-surface-hover px-2 py-0.5 text-[12px] font-medium text-muted shrink-0"
-              >
-                {variant.agent_display_name}
-              </span>
-            ))}
-          </div>
-          <div className="flex items-center gap-4 mt-3 text-[12.5px] text-muted">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <FolderOpen className="w-3.5 h-3.5 shrink-0" />
-              <span className="font-mono truncate">{skill.primaryVariant.path}</span>
-            </div>
-            {skill.files.length > 0 && (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <FileText className="w-3.5 h-3.5" />
-                {skill.files.join(", ")}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 scrollbar-hide">
-          {docLoading ? (
-            <div className="text-[13px] text-muted text-center mt-12">{t("common.loading")}</div>
-          ) : docContent ? (
-            <SkillMarkdown content={docContent} />
-          ) : (
-            <div className="text-[13px] text-muted text-center mt-12">{t("common.documentMissing")}</div>
-          )}
-        </div>
-      </div>
-    </div>,
-    document.body
   );
 }
 

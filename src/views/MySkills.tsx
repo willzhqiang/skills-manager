@@ -675,11 +675,13 @@ export function MySkills() {
       }
 
       let committed = false;
-      if (status.has_changes) {
+      try {
         await api.gitBackupCommit(t("settings.gitCommitPlaceholder"));
         committed = true;
-        status = await api.gitBackupStatus();
+      } catch {
+        // commit may fail if nothing changed after manifest export
       }
+      status = await api.gitBackupStatus();
 
       if (status.behind > 0) {
         await api.gitBackupPull();
@@ -747,7 +749,7 @@ export function MySkills() {
     if (!gitStatus.has_changes && gitStatus.ahead === 0 && gitStatus.behind === 0) {
       return {
         label: t("mySkills.gitRepoUpToDate"),
-        disabled: true,
+        disabled: false,
         toneClassName: "text-muted",
       };
     }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -50,6 +50,18 @@ export function SkillDetailPanel({
   const [loading, setLoading] = useState(false);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
   const [isAgentSectionExpanded, setIsAgentSectionExpanded] = useState(false);
   const [contentTab, setContentTab] = useState<"local" | "diff" | "source">("local");
   const localRequestIdRef = useRef(0);
@@ -379,7 +391,7 @@ export function SkillDetailPanel({
             <div className="text-[13px] text-muted text-center mt-12">{t("common.loading")}</div>
           ) : contentTab === "diff" ? (
             activeDoc && activeSourceDoc ? (
-              <DocumentDiffViewer original={activeDoc.content} updated={activeSourceDoc.content} />
+              <DocumentDiffViewer original={activeSourceDoc.content} updated={activeDoc.content} />
             ) : sourceLoading ? (
               <div className="text-[13px] text-muted text-center mt-12">{t("common.loading")}</div>
             ) : (

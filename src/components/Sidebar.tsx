@@ -104,7 +104,7 @@ export function Sidebar() {
   const handleSwitchScenario = async (id: string) => {
     await switchScenario(id);
     const s = scenarios.find((s) => s.id === id);
-    if (location.pathname === "/settings") {
+    if (location.pathname !== "/my-skills") {
       navigate("/my-skills");
     }
     if (s) toast.success(t("scenario.switched", { name: s.name }));
