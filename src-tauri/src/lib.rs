@@ -343,6 +343,7 @@ pub fn run() {
         core::skill_store::SkillStore::new(&db_path).expect("Failed to initialize database"),
     );
     commands::tools::migrate_legacy_tool_keys(&store).expect("Failed to migrate legacy tool keys");
+    auto_import_manifest_if_needed(&store);
     let store_for_setup = store.clone();
     initialize_startup_scenario(&store).expect("Failed to initialize startup scenario");
 
@@ -530,4 +531,21 @@ fn initialize_startup_scenario(store: &Arc<core::skill_store::SkillStore>) -> Re
 
     commands::scenarios::sync_scenario_skills(store, &desired_active).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+fn auto_import_manifest_if_needed(store: &std::sync::Arc<core::skill_store::SkillStore>) {
+    let has_skills = store
+        .get_all_skills()
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    if has_skills {
+        return;
+    }
+    let skills_dir = core::central_repo::skills_dir();
+    if let Ok(Some(_)) = core::manifest::read_manifest(&skills_dir) {
+        log::info!("Empty database with manifest found — auto-importing");
+        if let Err(e) = core::manifest::import_manifest(store, &skills_dir) {
+            log::warn!("Auto-import manifest failed: {e}");
+        }
+    }
 }

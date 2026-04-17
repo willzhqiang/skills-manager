@@ -23,7 +23,7 @@ export const i18nReady = (async () => {
   const savedLanguage = await getSettings("language").catch(() => null);
   const lng = isSupportedLanguage(savedLanguage)
     ? savedLanguage
-    : storedLanguage || "zh";
+    : storedLanguage || "en";
 
   localStorage.setItem(LANGUAGE_STORAGE_KEY, lng);
 
@@ -34,7 +34,7 @@ export const i18nReady = (async () => {
       en: { translation: en },
     },
     lng,
-    fallbackLng: "zh",
+    fallbackLng: "en",
     interpolation: { escapeValue: false },
   });
 })();
