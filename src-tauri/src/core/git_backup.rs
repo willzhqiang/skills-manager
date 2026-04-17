@@ -250,6 +250,13 @@ pub fn push(skills_dir: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Fetch from the remote repository (non-destructive, updates tracking refs only).
+pub fn fetch_remote(skills_dir: &Path) -> Result<()> {
+    ensure_repo(skills_dir)?;
+    run_git_checked(skills_dir, &["fetch", "origin"])?;
+    Ok(())
+}
+
 /// Pull from the remote repository.
 pub fn pull(skills_dir: &Path) -> Result<()> {
     ensure_repo(skills_dir)?;

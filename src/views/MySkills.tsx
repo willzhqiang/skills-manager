@@ -348,13 +348,19 @@ export function MySkills() {
 
       if (savedRemote) {
         setGitRemoteConfig(savedRemote);
-        return;
+      } else {
+        const detectedRemote = status?.remote_url?.trim() || "";
+        if (detectedRemote) {
+          setGitRemoteConfig(detectedRemote);
+          api.setSettings("git_backup_remote_url", detectedRemote).catch(() => {});
+        }
       }
 
-      const detectedRemote = status?.remote_url?.trim() || "";
-      if (detectedRemote) {
-        setGitRemoteConfig(detectedRemote);
-        api.setSettings("git_backup_remote_url", detectedRemote).catch(() => {});
+      if (status?.is_repo && status?.remote_url) {
+        api.gitBackupFetch()
+          .then(() => api.gitBackupStatus())
+          .then((updated) => setGitStatus(updated))
+          .catch(() => {});
       }
     })();
   }, []);

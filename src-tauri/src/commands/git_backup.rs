@@ -40,6 +40,16 @@ pub async fn git_backup_set_remote(
 }
 
 #[tauri::command]
+pub async fn git_backup_fetch(store: State<'_, Arc<SkillStore>>) -> Result<(), AppError> {
+    let _ = store;
+    let skills_dir = central_repo::skills_dir();
+    tokio::task::spawn_blocking(move || {
+        git_backup::fetch_remote(&skills_dir).map_err(AppError::classify_git_error)
+    })
+    .await?
+}
+
+#[tauri::command]
 pub async fn git_backup_commit(
     store: State<'_, Arc<SkillStore>>,
     message: String,

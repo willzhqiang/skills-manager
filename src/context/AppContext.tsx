@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { listen } from "@tauri-apps/api/event";
 import type { ManagedSkill, Project, Scenario, ToolInfo } from "../lib/tauri";
 import * as api from "../lib/tauri";
@@ -167,15 +167,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshAppData]);
 
-  // Auto-check skill updates on startup (non-blocking, silent)
+  // Auto-check skill updates on startup (non-blocking, silent, once only)
+  const updateCheckDone = useRef(false);
   useEffect(() => {
-    if (loading || managedSkills.length === 0) return;
+    if (loading || managedSkills.length === 0 || updateCheckDone.current) return;
     const hasGitSkills = managedSkills.some(
       (s) => s.source_type === "git" || s.source_type === "skillssh"
     );
     if (!hasGitSkills) return;
+    updateCheckDone.current = true;
 
-    // Delay to avoid slowing down initial render
     const timer = setTimeout(() => {
       api.checkAllSkillUpdates(false)
         .then(async () => {
@@ -191,9 +192,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   label: i18n.t("mySkills.viewUpdates"),
                   onClick: () => {
                     setDetailSkillId(null);
-                    // Navigate to My Skills without opening a specific detail panel.
-                    // AppProvider is outside Router, so use pushState + popstate
-                    // to preserve SPA state.
                     if (!window.location.pathname.endsWith("/my-skills")) {
                       window.history.pushState(null, "", "/my-skills");
                       window.dispatchEvent(new PopStateEvent("popstate"));
@@ -204,7 +202,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             );
           }
         })
-        .catch(() => {}); // silent failure
+        .catch(() => {});
     }, 3000);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps

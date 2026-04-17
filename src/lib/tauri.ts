@@ -391,6 +391,8 @@ export interface GitBackupVersion {
 export const gitBackupStatus = () =>
   invoke<GitBackupStatus>("git_backup_status");
 
+export const gitBackupFetch = () => invoke<void>("git_backup_fetch");
+
 export const gitBackupInit = () => invoke<void>("git_backup_init");
 
 export const gitBackupSetRemote = (url: string) =>
