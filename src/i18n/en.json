@@ -163,6 +163,39 @@
       "detachedSource": "Source tracking removed",
       "alreadyUpToDate": "Skill content unchanged (version synced)"
     },
+    "reconcile": {
+      "button": "Rescan",
+      "added": "Added {{count}} skill(s)",
+      "removed": "Removed {{count}} stale entry(ies)",
+      "upToDate": "All skills in sync — nothing to add or remove"
+    },
+    "fixLinks": {
+      "button": "Fix Links",
+      "diagnosing": "Diagnosing…",
+      "healthy": "All skill links are healthy",
+      "title": "Fix Skill Links",
+      "description": "Found {{count}} issue(s) across your agent directories",
+      "fixAllSafe": "Fix All Safe",
+      "fixAllDone": "Fixed: {{relinked}} relinked, {{deleted}} deleted, {{skipped}} skipped",
+      "columnAgent": "Agent",
+      "columnSkill": "Skill",
+      "columnIssue": "Issue",
+      "columnAction": "Action",
+      "issueType": {
+        "broken_symlink": "Broken symlink",
+        "physical_copy_identical": "Physical copy (identical)",
+        "physical_copy_diverged": "Physical copy (diverged)",
+        "orphan": "Orphan (not in central)",
+        "wrong_target_symlink": "Symlink to wrong target"
+      },
+      "actionRelink": "Relink",
+      "actionDelete": "Delete",
+      "actionImport": "Import & Relink",
+      "relinked": "Relinked {{skill}} in {{agent}}",
+      "deleted": "Deleted {{skill}} from {{agent}}",
+      "imported": "Imported & relinked {{skill}} in {{agent}}",
+      "close": "Close"
+    },
     "gitConfigEntry": "Sync Config",
     "filters": {
       "all": "All",

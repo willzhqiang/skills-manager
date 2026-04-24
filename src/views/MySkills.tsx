@@ -22,6 +22,8 @@ import {
   Square,
   GripVertical,
   DownloadCloud,
+  FolderSync,
+  Wrench,
 } from "lucide-react";
 import { open as dialogOpen } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
@@ -32,6 +34,7 @@ import { useMultiSelect } from "../hooks/useMultiSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { SkillDetailPanel } from "../components/SkillDetailPanel";
 import { MultiSelectToolbar } from "../components/MultiSelectToolbar";
+import { FixLinksDialog } from "../components/FixLinksDialog";
 import * as api from "../lib/tauri";
 import type {
   ManagedSkill,
@@ -134,6 +137,7 @@ export function MySkills() {
   const [deleteTarget, setDeleteTarget] = useState<ManagedSkill | null>(null);
   const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
   const [checkingAll, setCheckingAll] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [checkingSkillId, setCheckingSkillId] = useState<string | null>(null);
   const [updatingSkillId, setUpdatingSkillId] = useState<string | null>(null);
   const [toolToggles, setToolToggles] = useState<SkillToolToggle[] | null>(null);
@@ -149,6 +153,9 @@ export function MySkills() {
   const [tagEditSkillId, setTagEditSkillId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const [fixLinksOpen, setFixLinksOpen] = useState(false);
+  const [fixLinksIssues, setFixLinksIssues] = useState<api.SkillLinkIssue[]>([]);
+  const [diagnosing, setDiagnosing] = useState(false);
 
   const [scenarioSkillOrder, setScenarioSkillOrder] = useState<string[]>([]);
 
@@ -531,6 +538,43 @@ export function MySkills() {
     } finally {
       await refreshManagedSkills();
       setCheckingAll(false);
+    }
+  };
+
+  const handleReconcile = async () => {
+    setReconciling(true);
+    try {
+      const result = await api.reconcileCentralRepo();
+      if (result.added > 0 || result.removed > 0) {
+        const parts: string[] = [];
+        if (result.added > 0) parts.push(t("mySkills.reconcile.added", { count: result.added }));
+        if (result.removed > 0) parts.push(t("mySkills.reconcile.removed", { count: result.removed }));
+        toast.success(parts.join(", "));
+      } else {
+        toast.success(t("mySkills.reconcile.upToDate"));
+      }
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, t("common.error")));
+    } finally {
+      await refreshManagedSkills();
+      setReconciling(false);
+    }
+  };
+
+  const handleFixLinks = async () => {
+    setDiagnosing(true);
+    try {
+      const issues = await api.diagnoseSkillLinks();
+      if (issues.length === 0) {
+        toast.success(t("mySkills.fixLinks.healthy"));
+      } else {
+        setFixLinksIssues(issues);
+        setFixLinksOpen(true);
+      }
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, t("common.error")));
+    } finally {
+      setDiagnosing(false);
     }
   };
 
@@ -938,6 +982,22 @@ export function MySkills() {
               );
             })()
           )}
+          <button
+            onClick={handleReconcile}
+            disabled={reconciling}
+            className="ml-2 inline-flex items-center gap-1 rounded-md border-l border-border-subtle pl-4 pr-3 py-2 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+          >
+            <FolderSync className={cn("h-3.5 w-3.5", reconciling && "animate-spin")} />
+            {t("mySkills.reconcile.button")}
+          </button>
+          <button
+            onClick={handleFixLinks}
+            disabled={diagnosing}
+            className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-[13px] font-medium text-muted transition-colors hover:bg-surface-hover hover:text-secondary disabled:opacity-50"
+          >
+            <Wrench className={cn("h-3.5 w-3.5", diagnosing && "animate-spin")} />
+            {diagnosing ? t("mySkills.fixLinks.diagnosing") : t("mySkills.fixLinks.button")}
+          </button>
           <button
             onClick={handleCheckAllUpdates}
             disabled={checkingAll}
@@ -1528,6 +1588,12 @@ export function MySkills() {
         confirmLabel={t("mySkills.gitVersionRestore")}
         onClose={() => setRestoreVersionTag(null)}
         onConfirm={handleRestoreVersion}
+      />
+      <FixLinksDialog
+        open={fixLinksOpen}
+        issues={fixLinksIssues}
+        onClose={() => { setFixLinksOpen(false); setFixLinksIssues([]); }}
+        onRefresh={refreshManagedSkills}
       />
     </div>
   );

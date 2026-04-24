@@ -455,6 +455,7 @@ pub fn run() {
             commands::git_backup::git_backup_create_snapshot,
             commands::git_backup::git_backup_list_versions,
             commands::git_backup::git_backup_restore_version,
+            commands::git_backup::reconcile_central_repo,
             // Projects
             commands::projects::get_projects,
             commands::projects::add_project,
@@ -484,6 +485,10 @@ pub fn run() {
             commands::projects::reorder_projects,
             commands::scenarios::get_scenario_skill_order,
             commands::scenarios::reorder_scenario_skills,
+            // Fix Links
+            commands::fix_links::diagnose_skill_links,
+            commands::fix_links::fix_skill_link,
+            commands::fix_links::fix_all_skill_links,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

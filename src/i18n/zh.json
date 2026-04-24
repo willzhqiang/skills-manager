@@ -163,6 +163,39 @@
       "detachedSource": "已取消原路径追踪",
       "alreadyUpToDate": "Skill 内容未变化（版本已同步）"
     },
+    "reconcile": {
+      "button": "重新扫描",
+      "added": "新增 {{count}} 个 skill",
+      "removed": "移除 {{count}} 个过期条目",
+      "upToDate": "所有 skill 已同步，无需新增或移除"
+    },
+    "fixLinks": {
+      "button": "修复链接",
+      "diagnosing": "诊断中…",
+      "healthy": "所有 skill 链接正常",
+      "title": "修复 Skill 链接",
+      "description": "在 Agent 目录中发现 {{count}} 个问题",
+      "fixAllSafe": "一键修复安全项",
+      "fixAllDone": "已修复：{{relinked}} 个重新链接，{{deleted}} 个已删除，{{skipped}} 个跳过",
+      "columnAgent": "Agent",
+      "columnSkill": "Skill",
+      "columnIssue": "问题",
+      "columnAction": "操作",
+      "issueType": {
+        "broken_symlink": "失效的软链接",
+        "physical_copy_identical": "物理副本（与中央一致）",
+        "physical_copy_diverged": "物理副本（内容不同）",
+        "orphan": "孤立文件（中央仓库无对应）",
+        "wrong_target_symlink": "指向错误目标的软链接"
+      },
+      "actionRelink": "重新链接",
+      "actionDelete": "删除",
+      "actionImport": "导入并链接",
+      "relinked": "已重新链接 {{agent}} 中的 {{skill}}",
+      "deleted": "已从 {{agent}} 中删除 {{skill}}",
+      "imported": "已导入并链接 {{agent}} 中的 {{skill}}",
+      "close": "关闭"
+    },
     "gitConfigEntry": "同步配置",
     "filters": {
       "all": "全部",

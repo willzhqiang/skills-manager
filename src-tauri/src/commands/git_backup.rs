@@ -1,11 +1,18 @@
 use crate::core::{
     central_repo, error::AppError, git_backup, git_fetcher, manifest, skill_metadata,
 };
+use serde::Serialize;
 use std::sync::Arc;
 use tauri::State;
 use walkdir::WalkDir;
 
 use crate::core::skill_store::SkillStore;
+
+#[derive(Debug, Serialize)]
+pub struct ReconcileResult {
+    pub added: usize,
+    pub removed: usize,
+}
 
 #[tauri::command]
 pub async fn git_backup_status(
@@ -135,6 +142,50 @@ pub async fn git_backup_restore_version(
     tokio::task::spawn_blocking(move || {
         git_backup::restore_snapshot_version(&skills_dir, &tag).map_err(AppError::git)?;
         import_manifest_then_reconcile(&store, &skills_dir)
+    })
+    .await?
+}
+
+#[tauri::command]
+pub async fn reconcile_central_repo(
+    store: State<'_, Arc<SkillStore>>,
+) -> Result<ReconcileResult, AppError> {
+    let store = store.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        let skills_dir = central_repo::skills_dir();
+
+        // Snapshot skill IDs before reconcile.
+        let before: std::collections::HashSet<String> = store
+            .get_all_skills()
+            .map_err(AppError::db)?
+            .into_iter()
+            .map(|s| s.id)
+            .collect();
+
+        reconcile_skills_index(&store).map_err(AppError::db)?;
+
+        // Diff to find newly added / removed.
+        let after_skills = store.get_all_skills().map_err(AppError::db)?;
+        let after: std::collections::HashSet<String> =
+            after_skills.iter().map(|s| s.id.clone()).collect();
+
+        let added_ids: Vec<&String> = after.difference(&before).collect();
+        let removed = before.difference(&after).count();
+        let added = added_ids.len();
+
+        // Auto-add newly discovered skills to the active scenario and sync symlinks.
+        if let Ok(Some(scenario_id)) = store.get_active_scenario_id() {
+            for id in &added_ids {
+                store.add_skill_to_scenario(&scenario_id, id).ok();
+            }
+            // Sync creates symlinks for all skills in the scenario that lack targets.
+            super::scenarios::sync_scenario_skills(&store, &scenario_id).ok();
+        }
+
+        // Re-export manifest so it stays in sync with DB.
+        manifest::export_manifest(&store, &skills_dir).map_err(AppError::io)?;
+
+        Ok(ReconcileResult { added, removed })
     })
     .await?
 }

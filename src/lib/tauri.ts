@@ -419,6 +419,14 @@ export const gitBackupListVersions = (limit?: number) =>
 export const gitBackupRestoreVersion = (tag: string) =>
   invoke<void>("git_backup_restore_version", { tag });
 
+export interface ReconcileResult {
+  added: number;
+  removed: number;
+}
+
+export const reconcileCentralRepo = () =>
+  invoke<ReconcileResult>("reconcile_central_repo");
+
 // ── Scenarios ──
 
 export const getScenarios = () => invoke<Scenario[]>("get_scenarios");
@@ -519,3 +527,29 @@ export const deleteProjectSkill = (projectId: string, skillRelativePath: string,
 
 export const slugifySkillNames = (names: string[]) =>
   invoke<string[]>("slugify_skill_names", { names });
+
+// ── Fix Links ──
+
+export interface SkillLinkIssue {
+  tool_key: string;
+  tool_display_name: string;
+  skill_name: string;
+  found_path: string;
+  issue_type: "broken_symlink" | "physical_copy_identical" | "physical_copy_diverged" | "orphan" | "wrong_target_symlink";
+  central_path: string | null;
+}
+
+export interface FixAllResult {
+  relinked: number;
+  deleted: number;
+  skipped: number;
+}
+
+export const diagnoseSkillLinks = () =>
+  invoke<SkillLinkIssue[]>("diagnose_skill_links");
+
+export const fixSkillLink = (toolKey: string, skillName: string, action: string) =>
+  invoke<void>("fix_skill_link", { toolKey, skillName, action });
+
+export const fixAllSkillLinks = () =>
+  invoke<FixAllResult>("fix_all_skill_links");

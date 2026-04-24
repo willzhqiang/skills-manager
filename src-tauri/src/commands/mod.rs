@@ -1,4 +1,5 @@
 pub mod browse;
+pub mod fix_links;
 pub mod git_backup;
 pub mod projects;
 pub mod scan;
